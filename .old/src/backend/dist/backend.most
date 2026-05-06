@@ -1,0 +1,157 @@
+// Version: 1.0.0
+type AppUser__610414026 =
+  {
+    createdAt : Int;
+    isActive : Bool;
+    lastLogin : ?Int;
+    mustChangePassword : Bool;
+    passwordHash : Text;
+    principal : Text;
+    role : UserRole__242029788;
+    sessionExpiry : ?Int;
+    username : Text
+  };
+type AuditEntry__445681898 =
+  {
+    action : Text;
+    details : Text;
+    entityId : Text;
+    entityType : Text;
+    id : Text;
+    ipAddress : ?Text;
+    performedAt : Int;
+    performedBy : Text
+  };
+type CheckInMethod__906456856 = {#Manual; #ManualQuick; #QRScan};
+type CheckIn__750157698 =
+  {
+    checkedInAt : Int;
+    checkedInBy : Text;
+    id : Text;
+    method : CheckInMethod__906456856;
+    registrationId : Text;
+    shareholderId : Text
+  };
+type Data__791452850<K, V> =
+  {var count : Nat__490723111; kvs : [var ?(K, V)]};
+type ImportBatch__283755428 =
+  {
+    duplicatesSkipped : Nat;
+    filename : Text;
+    id : Text;
+    importedRows : Nat;
+    status : ImportStatus__800718498;
+    totalRows : Nat;
+    uploadedAt : Int;
+    uploadedBy : Text
+  };
+type ImportStatus__800718498 = {#Complete; #Failed; #Pending; #Processing};
+type Internal__8484328<K, V> =
+  {children : [var ?Node__46230540<K, V>]; data : Data__791452850<K, V>};
+type Leaf__809889148<K, V> = {data : Data__791452850<K, V>};
+type List__415060402<T> = List__790383201<T>;
+type List__790383201<T> =
+  {
+    var blockIndex : Nat__490723111;
+    var blocks : [var [var ?T]];
+    var elementIndex : Nat__490723111
+  };
+type Map__158565046<K, V> = Map__297112838<K, V>;
+type Map__297112838<K, V> =
+  {var root : Node__46230540<K, V>; var size : Nat__490723111};
+type Map__605269027<K, V> = Map__158565046<K, V>;
+type Nat__490723111 = Nat__920180692;
+type Nat__920180692 = Nat;
+type Node__46230540<K, V> =
+  {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
+type RegistrationType__342473846 = {#InPerson; #Proxy};
+type Registration__768355261 =
+  {
+    id : Text;
+    notes : ?Text;
+    proxyContact : ?Text;
+    proxyFraudFlags : [Text];
+    proxyName : ?Text;
+    proxyProofKey : ?Text;
+    proxyProofValidated : Bool;
+    registeredAt : Int;
+    registeredBy : Text;
+    registrationType : RegistrationType__342473846;
+    shareholderId : Text;
+    updatedAt : Int;
+    updatedBy : ?Text;
+    verificationCode : Text
+  };
+type Session__688738915 =
+  {
+    expiresAt : Int;
+    role : UserRole__242029788;
+    token : Text;
+    username : Text
+  };
+type ShareholderStatus__662759327 =
+  {#CheckedIn; #NotRegistered; #RegisteredInPerson; #RegisteredProxy};
+type Shareholder__539045195 =
+  {
+    email : ?Text;
+    fullName : Text;
+    id : Text;
+    idNumber : Text;
+    importedAt : Int;
+    importedBy : Text;
+    phone : ?Text;
+    shareholderNumber : Text;
+    shareholding : Nat;
+    status : ShareholderStatus__662759327;
+    tags : [Text]
+  };
+type UserRole__242029788 = {#RegistrationOfficer; #SuperAdmin; #Viewer};
+actor {
+  stable adminSessions :
+    {
+      var root : Node__46230540<Text, Session__688738915>;
+      var size : Nat__490723111
+    };
+  stable adminUsers :
+    {
+      var root : Node__46230540<Text, AppUser__610414026>;
+      var size : Nat__490723111
+    };
+  stable var agmSettings :
+    {
+      agmDate : Text;
+      agmName : Text;
+      quorumThreshold : Nat;
+      sessionTimeoutMinutes : Nat;
+      venue : Text
+    };
+  stable auditState :
+    {
+      counter : {var value : Nat};
+      log : List__415060402<AuditEntry__445681898>
+    };
+  stable checkInState :
+    {
+      byId : Map__605269027<Text, CheckIn__750157698>;
+      byShareholder : Map__605269027<Text, Text>;
+      counter : {var value : Nat}
+    };
+  stable importState :
+    {
+      batches : Map__605269027<Text, ImportBatch__283755428>;
+      counter : {var value : Nat}
+    };
+  stable registrationState :
+    {
+      byId : Map__605269027<Text, Registration__768355261>;
+      byShareholder : Map__605269027<Text, Text>;
+      counter : {var value : Nat};
+      pending : Map__605269027<Text, Text>
+    };
+  stable shareholderState :
+    {
+      byId : Map__605269027<Text, Shareholder__539045195>;
+      byNumber : Map__605269027<Text, Text>;
+      counter : {var value : Nat}
+    }
+};

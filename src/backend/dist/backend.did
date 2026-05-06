@@ -1,0 +1,302 @@
+type UserRole = 
+ variant {
+   RegistrationOfficer;
+   SuperAdmin;
+   Viewer;
+ };
+type ShareholderStatus = 
+ variant {
+   CheckedIn;
+   NotRegistered;
+   RegisteredInPerson;
+   RegisteredProxy;
+ };
+type ShareholderInput = 
+ record {
+   email: opt text;
+   fullName: text;
+   idNumber: text;
+   phone: opt text;
+   shareholderNumber: text;
+   shareholding: nat;
+   tags: vec text;
+ };
+type Shareholder = 
+ record {
+   email: opt text;
+   fullName: text;
+   id: text;
+   idNumber: text;
+   importedAt: int;
+   importedBy: text;
+   phone: opt text;
+   shareholderNumber: text;
+   shareholding: nat;
+   status: ShareholderStatus;
+   tags: vec text;
+ };
+type Session = 
+ record {
+   expiresAt: int;
+   role: UserRole;
+   token: text;
+   username: text;
+ };
+type SearchResult = 
+ record {
+   items: vec Shareholder;
+   page: nat;
+   total: nat;
+ };
+type RegistrationUpdate = 
+ record {
+   notes: opt text;
+   proxyData: opt ProxyData;
+ };
+type RegistrationType = 
+ variant {
+   InPerson;
+   Proxy;
+ };
+type Registration = 
+ record {
+   id: text;
+   notes: opt text;
+   proxyContact: opt text;
+   proxyFraudFlags: vec text;
+   proxyName: opt text;
+   proxyProofKey: opt text;
+   proxyProofValidated: bool;
+   registeredAt: int;
+   registeredBy: text;
+   registrationType: RegistrationType;
+   shareholderId: text;
+   updatedAt: int;
+   updatedBy: opt text;
+   verificationCode: text;
+ };
+type ProxyData = 
+ record {
+   proxyContact: text;
+   proxyName: text;
+   proxyProofKey: opt text;
+ };
+type LoginResponse = 
+ record {
+   mustChangePassword: bool;
+   role: UserRole;
+   token: text;
+   username: text;
+ };
+type ImportStatus = 
+ variant {
+   Complete;
+   Failed;
+   Pending;
+   Processing;
+ };
+type ImportBatch = 
+ record {
+   duplicatesSkipped: nat;
+   filename: text;
+   id: text;
+   importedRows: nat;
+   status: ImportStatus;
+   totalRows: nat;
+   uploadedAt: int;
+   uploadedBy: text;
+ };
+type DashboardMetrics = 
+ record {
+   attendanceRate: float64;
+   checkedIn: nat;
+   lastUpdated: int;
+   notRegistered: nat;
+   quorumStatus: bool;
+   registered: nat;
+   registeredInPerson: nat;
+   registeredProxy: nat;
+   totalShareholders: nat;
+ };
+type CheckInMethod = 
+ variant {
+   Manual;
+   ManualQuick;
+   QRScan;
+ };
+type CheckIn = 
+ record {
+   checkedInAt: int;
+   checkedInBy: text;
+   id: text;
+   method: CheckInMethod;
+   registrationId: text;
+   shareholderId: text;
+ };
+type BulkCreateResult = 
+ record {
+   created: nat;
+   duplicates: nat;
+   errors: vec text;
+ };
+type AuditEntry = 
+ record {
+   action: text;
+   details: text;
+   entityId: text;
+   entityType: text;
+   id: text;
+   ipAddress: opt text;
+   performedAt: int;
+   performedBy: text;
+ };
+type AppUser = 
+ record {
+   createdAt: int;
+   isActive: bool;
+   lastLogin: opt int;
+   mustChangePassword: bool;
+   passwordHash: text;
+   "principal": text;
+   role: UserRole;
+   sessionExpiry: opt int;
+   username: text;
+ };
+type AGMSettings = 
+ record {
+   agmDate: text;
+   agmName: text;
+   quorumThreshold: nat;
+   sessionTimeoutMinutes: nat;
+   venue: text;
+ };
+service : {
+  bulkCreateShareholders: (items: vec ShareholderInput, importedBy: text) ->
+   (BulkCreateResult);
+  cancelRegistration: (id: text, cancelledBy: text, reason: text) ->
+   (variant {
+      err: text;
+      ok;
+    });
+  changePassword: (username: text, oldPassword: text, newPassword: text) ->
+   (variant {
+      err: text;
+      ok;
+    });
+  checkInShareholder: (shareholderId: text, registrationId: text, method:
+   CheckInMethod, checkedInBy: text) -> (variant {
+                                           err: text;
+                                           ok: CheckIn;
+                                         });
+  createImportBatch: (filename: text, uploadedBy: text, totalRows: nat) ->
+   (ImportBatch);
+  createShareholder: (data: ShareholderInput, importedBy: text) ->
+   (variant {
+      err: text;
+      ok: Shareholder;
+    });
+  createUser: (adminToken: text, username: text, password: text, role:
+   UserRole) -> (variant {
+                   err: text;
+                   ok: AppUser;
+                 });
+  deactivateUser: (adminToken: text, username: text) ->
+   (variant {
+      err: text;
+      ok;
+    });
+  deleteAllShareholders: (deletedBy: text) -> (variant {
+                                                 err: text;
+                                                 ok: nat;
+                                               });
+  forceLogout: (adminToken: text, username: text) ->
+   (variant {
+      err: text;
+      ok;
+    });
+  getActiveSessions: (adminToken: text) ->
+   (variant {
+      err: text;
+      ok: vec Session;
+    });
+  getAllCheckIns: () -> (vec CheckIn) query;
+  getAllRegistrations: () -> (vec Registration) query;
+  getAllShareholders: () -> (vec Shareholder) query;
+  getAuditLog: (entityType: opt text, entityId: opt text, limit: nat) ->
+   (vec AuditEntry) query;
+  getAuditLogForExport: () -> (vec AuditEntry) query;
+  getCheckIn: (id: text) -> (opt CheckIn) query;
+  getCheckInByShareholder: (shareholderId: text) -> (opt CheckIn) query;
+  getDashboardMetrics: (quorumThreshold: nat) -> (DashboardMetrics) query;
+  getImportBatch: (id: text) -> (opt ImportBatch) query;
+  getImportBatches: () -> (vec ImportBatch) query;
+  getRegistration: (id: text) -> (opt Registration) query;
+  getRegistrationByShareholder: (shareholderId: text) ->
+   (opt Registration) query;
+  getSettings: () -> (AGMSettings) query;
+  getShareholder: (id: text) -> (opt Shareholder) query;
+  getShareholderByNumber: (shareholderNumber: text) ->
+   (opt Shareholder) query;
+  getUsers: (adminToken: text) -> (variant {
+                                     err: text;
+                                     ok: vec AppUser;
+                                   });
+  login: (username: text, password: text) ->
+   (variant {
+      err: text;
+      ok: LoginResponse;
+    });
+  logout: (token: text) -> ();
+  registerShareholder: (shareholderId: text, regType: RegistrationType,
+   proxyData: opt ProxyData, registeredBy: text) ->
+   (variant {
+      err: text;
+      ok: Registration;
+    });
+  resetPasswordWithCode: (username: text, resetCode: text, newPassword:
+   text) -> (variant {
+               err: text;
+               ok;
+             });
+  searchShareholders: (searchQuery: text, statusFilter:
+   opt ShareholderStatus, page: nat, pageSize: nat) -> (SearchResult) query;
+  undoCheckIn: (shareholderId: text, undoneBy: text) ->
+   (variant {
+      err: text;
+      ok;
+    });
+  updateImportBatchStatus: (id: text, status: ImportStatus, importedRows:
+   nat, duplicates: nat) -> (variant {
+                               err: text;
+                               ok: ImportBatch;
+                             });
+  updateRegistration: (id: text, updates: RegistrationUpdate, updatedBy:
+   text) -> (variant {
+               err: text;
+               ok: Registration;
+             });
+  updateSettings: (adminToken: text, newSettings: AGMSettings) ->
+   (variant {
+      err: text;
+      ok: AGMSettings;
+    });
+  updateShareholderStatus: (id: text, status: ShareholderStatus, updatedBy:
+   text) -> (variant {
+               err: text;
+               ok: Shareholder;
+             });
+  updateUserRole: (adminToken: text, username: text, role: UserRole) ->
+   (variant {
+      err: text;
+      ok: AppUser;
+    });
+  validateProxyProof: (registrationId: text, validated: bool, fraudFlags:
+   vec text, validatedBy: text) -> (variant {
+                                      err: text;
+                                      ok: Registration;
+                                    });
+  validateSession: (token: text) -> (variant {
+                                       err: text;
+                                       ok: Session;
+                                     });
+}
